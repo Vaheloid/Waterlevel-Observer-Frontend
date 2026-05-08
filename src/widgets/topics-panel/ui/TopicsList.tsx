@@ -12,8 +12,14 @@ export function TopicsList({ onTopicSelect, onTopicDelete, selectedTopicId, topi
     const handleTopicClick = (topic: Topic) => {
         if (isSelectionDisabled) return;
         const isDeselecting = selectedTopicId === topic.id_topic;
+        
         onTopicSelect(isDeselecting ? null : topic.id_topic);
-        console.log("Выбран топик: ", topic.name_topic);
+
+        if (isDeselecting) {
+            console.log("Отмена выбора топика: ", topic.name_topic);
+        } else {
+            console.log("Выбран топик: ", topic.name_topic);
+        }
     };
 
     const confirmDelete = () => {

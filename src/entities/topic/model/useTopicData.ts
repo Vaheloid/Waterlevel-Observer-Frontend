@@ -12,12 +12,10 @@ import type { ChartDataNode, TopicDataResponse, EMAItem, PredictionItem } from '
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 
 export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "square" = "hull") => {
-    // Состояние интервалов из второй версии
     const [topicsDataAndPointsRefetchInterval, setTopicsDataAndPointsRefetchInterval] = useState<number | false>(10000);
     const [configCheckInterval, setConfigCheckInterval] = useState(30000);
     const configTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
-    // Загрузка конфига
     const loadConfig = useCallback(async () => {
         try {
             const response = await fetch(`/config.json?t=${Date.now()}`);
@@ -40,7 +38,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         };
     }, [loadConfig]);
 
-    // Запросы из первой версии, адаптированные под динамический интервал
     const query = useQuery<TopicDataResponse>({
         queryKey: ['topicData', selectedTopicId],
         queryFn: async () => fetchTopicData(selectedTopicId!),
@@ -69,7 +66,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         refetchInterval: topicsDataAndPointsRefetchInterval,
     });
 
-    // Ручной рефетч при смене ID или интервала
     useEffect(() => {
         if (selectedTopicId) {
             query.refetch();
@@ -79,7 +75,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         }
     }, [topicsDataAndPointsRefetchInterval, selectedTopicId, query, emaQuery, predictionQuery, pointsQuery]);
 
-    // Логирование из второй версии
     const lastLoggedDataRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -101,7 +96,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         if (!isTopicDataEmpty && query.data) {
             console.log("Данные топика получены: ", query.data);
             try {
-                // Передаем все три массива для проверки формирования графика в логах
                 const processed = chartUtils(query.data, emaQuery.data, predictionQuery.data);
                 isChartDataEmpty = !processed || processed.length === 0;
                 
@@ -115,11 +109,11 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         }
 
         if (isTopicDataEmpty || isChartDataEmpty) {
-            console.warn(`Данные (data) отсутствуют для ID: ${selectedTopicId}`);
+            console.warn(`Данные (data) отсутствуют для топика с ID: ${selectedTopicId}`);
         }
 
         if (!pointsQuery.data || pointsQuery.data.length === 0) {
-            console.warn(`Данные (points) отсутствуют для ID: ${selectedTopicId}`);
+            console.warn(`Данные (points) отсутствуют для топика с ID: ${selectedTopicId}`);
         } else {
             try {
                 let displayPoints = pointsQuery.data;
@@ -135,14 +129,12 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         lastLoggedDataRef.current = currentDataFingerprint;
     }, [query.data, query.isSuccess, pointsQuery.data, pointsQuery.isSuccess, emaQuery.data, predictionQuery.data, selectedTopicId]);
 
-    // Объединенный useMemo
     const result = useMemo(() => {
         const data = query.data;
         const emaData = emaQuery.data;
         const predData = predictionQuery.data;
         const pointsData = pointsQuery.data;
 
-        // Если нет никаких данных для графика, возвращаем пустоту
         if (!data && !emaData && !predData) {
             return { mergedGeoJSON: null, chartData: [] as ChartDataNode[] };
         }
@@ -151,7 +143,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         let processedGeoJSON = null;
 
         try {
-            // Используем chartUtils с тремя аргументами
             processedChartData = chartUtils(data || [], emaData || [], predData || []);
         } catch (err) {
             console.error("Ошибка при обработке данных графика:", err);
@@ -185,7 +176,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         };
     }, [query.data, emaQuery.data, predictionQuery.data, pointsQuery.data, mode]);
 
-    // Ошибки
     useEffect(() => {
         if (query.error) console.error("Ошибка при получении TopicData: ", query.error);
         if (emaQuery.error) console.error("Ошибка при получении EMA: ", emaQuery.error);

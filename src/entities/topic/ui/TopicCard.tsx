@@ -95,14 +95,14 @@ export const TopicCard = ({ topic, isSelected, isSelectionDisabled, onSelect, on
                 
                 <VStack align="center" gap={0} borderLeft="1px solid" borderColor="gray.200" width="100%">
                     <Text fontSize="10px" color="gray.400" fontWeight="600" textTransform="uppercase">Высота активации</Text>
-                    <Text fontSize="13px" fontWeight="600" color={isSelected ? { base: "teal.500", _dark: "whiteAlpha.900"} : "teal.500"} textAlign="center" marginTop="1">
+                    <Text fontSize="13px" fontWeight="600" color={isSelected ? { base: "teal.500", _dark: "teal.500"} : "teal.500"} textAlign="center" marginTop="1">
                         {topic.altitude_topic} м
                     </Text>
                 </VStack>
 
                 <VStack align="center" gap={0} borderLeft="1px solid" borderColor="gray.200" width="100%" >
                     <Text fontSize="10px" color="gray.400" fontWeight="600" textTransform="uppercase">Высота <br/> датчика</Text>
-                    <Text fontSize="13px" fontWeight="600" color={isSelected ? { base: "blue.500", _dark: "whiteAlpha.900"} : "blue.500"} textAlign="center" marginTop="1">
+                    <Text fontSize="13px" fontWeight="600" color={isSelected ? { base: "blue.500", _dark: "blue.500"} : "blue.500"} textAlign="center" marginTop="1">
                         {topic.altitudeSensor_topic} м
                     </Text>
                 </VStack>

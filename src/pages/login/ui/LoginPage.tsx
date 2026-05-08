@@ -17,7 +17,7 @@ export default function Login() {
 
 		try {
 			await loginUser(data)
-			window.location.href = './mainpage.html';
+			window.location.replace('./mainpage.html');
 			reset()
 		} 
 		catch {

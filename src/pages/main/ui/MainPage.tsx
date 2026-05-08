@@ -14,9 +14,9 @@ export default function MainPage() {
     const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null)
     const [isChartVisible, setIsChartVisible] = useState(false)
     const [clickedCoords, setClickedCoords] = useState<{lat: number, lng: number} | null>(null);
-    const [isSelectionDisabled, setIsSelectionDisabled] = useState(false); // НОВОЕ
-    // 1. Новое состояние для режима полигонов
+    const [isSelectionDisabled, setIsSelectionDisabled] = useState(false);
     const [polygonMode, setPolygonMode] = useState<"hull" | "square">("hull");
+    
     const { topics, loading, loadData } = useTopics(activePanel === "topics")
     const { chartData, mergedGeoJSON, } = useTopicData(selectedTopicId, polygonMode);
 

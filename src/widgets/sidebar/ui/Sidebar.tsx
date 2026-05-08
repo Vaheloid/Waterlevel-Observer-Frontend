@@ -5,6 +5,7 @@ import { NavButton } from "@/widgets";
 import type { FormValues, SidebarProps } from "@/shared/types/types";
 import { useColorMode } from "../../../shared/ui/color-mode";
 import { logoutUser } from "@/shared";
+import { queryClient } from "@/app/providers/queryClient";
 
 export const Sidebar = ({ isOpen, onToggle, activePanel, onPanelToggle, polygonMode, onPolygonModeToggle}: SidebarProps) => {
     const { colorMode, toggleColorMode } = useColorMode();
@@ -16,41 +17,43 @@ export const Sidebar = ({ isOpen, onToggle, activePanel, onPanelToggle, polygonM
         duration: 0.3,
     };
 
-    const Logout = async () => {
-    try {
-        // 1. Вызываем запрос к бэкенду. 
-        // Если для логаута не нужны данные (FormValues), 
-        // убедитесь, что бэкенд их не требует. 
-        // Если требует пустой объект, передаем {} как FormValues.
-        await logoutUser({ login_user: "", password_user: "" } as FormValues);
+    const clearAllCookies = () => {
+    const cookies = document.cookie.split(";");
+
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
         
-    } catch (error) {
-        // Логируем ошибку, но все равно продолжаем процесс выхода на фронте
-        console.error("Ошибка при запросе на логаут:", error);
-    } finally {
-        // Эти действия выполняем в любом случае (даже если сервер вернул ошибку),
-        // чтобы пользователь не "застрял" в приложении.
+        // Базовые параметры для удаления
+        const path = "/";
+        const domain = window.location.hostname;
+        const shortDomain = domain.split('.').slice(-2).join('.'); // например, "example.com"
 
-        // Функция удаления конкретной куки
-        const deleteCookie = (name: string) => {
-            const paths = [window.location.pathname, "/", ""];
-            paths.forEach(path => {
-                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}`;
-            });
-        };
-
-        // 2. Удаляем токены из кук (на случай, если бэкенд не прислал Set-Cookie)
-        deleteCookie('refresh_token');
-        deleteCookie('WaterlevelSystemSession');
-
-        // 3. Чистим локальные хранилища
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // 4. Редирект на логин
-        window.location.href = "/login";
+        // Пытаемся удалить куку с разными комбинациями путей и доменов
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}; domain=${domain}`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}; domain=.${domain}`;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}; domain=.${shortDomain}`;
     }
 };
+
+    const Logout = async () => {
+        try {
+            await logoutUser({ login_user: "", password_user: "" } as FormValues);
+        } catch (error) {
+            console.error("Ошибка при запросе на логаут:", error);
+        } finally {
+            queryClient.clear();
+
+            clearAllCookies();
+
+            localStorage.clear();
+            sessionStorage.clear();
+
+            window.location.replace("/");
+        }
+    };
 
     return (
         <motion.aside
@@ -152,7 +155,7 @@ export const Sidebar = ({ isOpen, onToggle, activePanel, onPanelToggle, polygonM
 
                         <NavButton
                             icon={<LogOut size={24} color="currentColor" />}
-                            color={{ base: "black", _dark: "white" }} // Выделим красным для акцента на выходе
+                            color={{ base: "black", _dark: "white" }}
                             label="Выйти"
                             isExpanded={isOpen}
                             onClick={Logout}
