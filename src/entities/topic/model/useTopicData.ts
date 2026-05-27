@@ -9,35 +9,31 @@ import {
     chartUtils 
 } from '@/shared'; 
 import type { ChartDataNode, TopicDataResponse, EMAItem, PredictionItem } from '@/shared/types/types';
-import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+
+interface ConfigResponse {
+    TOPIC_FULLDATA_REFETCH_INTERVAL: number | false;
+    CONFIG_CHECK_INTERVAL: number;
+}
 
 export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "square" = "hull") => {
-    const [topicsDataAndPointsRefetchInterval, setTopicsDataAndPointsRefetchInterval] = useState<number | false>(10000);
-    const [configCheckInterval, setConfigCheckInterval] = useState(30000);
-    const configTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     
-    const loadConfig = useCallback(async () => {
-        try {
+    // Запрос конфига с динамическим интервалом через функцию
+    const configQuery = useQuery<ConfigResponse>({
+        queryKey: ['globalConfig'],
+        queryFn: async () => {
             const response = await fetch(`/config.json?t=${Date.now()}`);
             if (!response.ok) throw new Error("Config not found");
-            const config = await response.json();
-            
-            setTopicsDataAndPointsRefetchInterval(config.TOPIC_FULLDATA_REFETCH_INTERVAL);
-            setConfigCheckInterval(config.CONFIG_CHECK_INTERVAL);
-        } catch (error) {
-            console.error("Ошибка загрузки конфига в useTopicData:", error);
-        } finally {
-            configTimerRef.current = setTimeout(loadConfig, configCheckInterval);
-        }
-    }, [configCheckInterval]);
+            return response.json();
+        },
+        refetchInterval: (query) => query.state.data?.CONFIG_CHECK_INTERVAL ?? 30000,
+        staleTime: 0,
+    });
 
-    useEffect(() => {
-        loadConfig();
-        return () => {
-            if (configTimerRef.current) clearTimeout(configTimerRef.current);
-        };
-    }, [loadConfig]);
+    // Получаем интервал для запросов данных топика (вычисляемое состояние)
+    const topicsDataAndPointsRefetchInterval = configQuery.data?.TOPIC_FULLDATA_REFETCH_INTERVAL ?? 10000;
 
+    // Основные запросы данных
     const query = useQuery<TopicDataResponse>({
         queryKey: ['topicData', selectedTopicId],
         queryFn: async () => fetchTopicData(selectedTopicId!),
@@ -66,15 +62,7 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         refetchInterval: topicsDataAndPointsRefetchInterval,
     });
 
-    useEffect(() => {
-        if (selectedTopicId) {
-            query.refetch();
-            emaQuery.refetch();
-            predictionQuery.refetch();
-            pointsQuery.refetch();
-        }
-    }, [topicsDataAndPointsRefetchInterval, selectedTopicId, query, emaQuery, predictionQuery, pointsQuery]);
-
+    // Логирование и проверка данных
     const lastLoggedDataRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -98,7 +86,6 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
             try {
                 const processed = chartUtils(query.data, emaQuery.data, predictionQuery.data);
                 isChartDataEmpty = !processed || processed.length === 0;
-                
                 if (!isChartDataEmpty) {
                     console.log("График сформирован: ", processed);
                 }
@@ -129,6 +116,7 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         lastLoggedDataRef.current = currentDataFingerprint;
     }, [query.data, query.isSuccess, pointsQuery.data, pointsQuery.isSuccess, emaQuery.data, predictionQuery.data, selectedTopicId]);
 
+    // Трансформация данных для UI
     const result = useMemo(() => {
         const data = query.data;
         const emaData = emaQuery.data;
@@ -176,17 +164,19 @@ export const useTopicData = (selectedTopicId: number | null, mode: "hull" | "squ
         };
     }, [query.data, emaQuery.data, predictionQuery.data, pointsQuery.data, mode]);
 
+    // Обработка ошибок в консоль
     useEffect(() => {
+        if (configQuery.error) console.error("Ошибка при получении Config: ", configQuery.error);
         if (query.error) console.error("Ошибка при получении TopicData: ", query.error);
         if (emaQuery.error) console.error("Ошибка при получении EMA: ", emaQuery.error);
         if (predictionQuery.error) console.error("Ошибка при получении Prediction: ", predictionQuery.error);
         if (pointsQuery.error) console.error("Ошибка при получении Points: ", pointsQuery.error);
-    }, [query.error, emaQuery.error, predictionQuery.error, pointsQuery.error]);
+    }, [configQuery.error, query.error, emaQuery.error, predictionQuery.error, pointsQuery.error]);
 
     return { 
         mergedGeoJSON: result.mergedGeoJSON, 
-        loadingTopicData: query.isLoading || emaQuery.isLoading || predictionQuery.isLoading || pointsQuery.isLoading, 
+        loadingTopicData: configQuery.isLoading || query.isLoading || emaQuery.isLoading || predictionQuery.isLoading || pointsQuery.isLoading, 
         chartData: result.chartData,
-        error: query.error || emaQuery.error || predictionQuery.error || pointsQuery.error 
+        error: configQuery.error || query.error || emaQuery.error || predictionQuery.error || pointsQuery.error 
     };
-}
+};

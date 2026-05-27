@@ -1,36 +1,40 @@
-import { useState, useEffect, useRef, useCallback } from 'react'; // Добавлен useCallback
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchTopics } from '@/shared';
 import type { Topic } from '@/shared/types/types';
 
-export const useTopics = (enabled: boolean = false) => {
-    const [topicsInterval, setTopicsInterval] = useState<number | false>(10000);
-    const [configCheckInterval, setConfigCheckInterval] = useState(30000);
-    
-    const configTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+interface ConfigResponse {
+    TOPICS_REFETCH_INTERVAL: number | false;
+    CONFIG_CHECK_INTERVAL: number;
+}
 
-    const loadConfig = useCallback(async () => {
-        try {
+export const useTopics = (enabled: boolean = false) => {
+    /**
+     * 1. Загрузка конфигурации.
+     * Чтобы использовать интервал из самого себя, передаем функцию,
+     * которая принимает текущее состояние query из кэша.
+     */
+    const configQuery = useQuery<ConfigResponse>({
+        queryKey: ['globalConfig'],
+        queryFn: async () => {
             const response = await fetch(`/config.json?t=${Date.now()}`);
             if (!response.ok) throw new Error("Config not found");
-            const config = await response.json();
-            
-            setTopicsInterval(config.TOPICS_REFETCH_INTERVAL);
-            setConfigCheckInterval(config.CONFIG_CHECK_INTERVAL);
-        } catch (error) {
-            console.error("Ошибка загрузки конфига:", error);
-        } finally {
-            configTimerRef.current = setTimeout(loadConfig, configCheckInterval);
-        }
-    }, [configCheckInterval]);
+            return response.json();
+        },
+        refetchInterval: (query) => query.state.data?.CONFIG_CHECK_INTERVAL ?? 30000,
+        staleTime: 0,
+    });
 
-    useEffect(() => {
-        loadConfig();
-        return () => {
-            if (configTimerRef.current) clearTimeout(configTimerRef.current);
-        };
-    }, [loadConfig]);
+    /**
+     * 2. Вычисляем интервал для топиков «на лету» прямо во время рендера.
+     * Если данных еще нет, берем дефолтные 10000.
+     */
+    const topicsInterval = configQuery.data?.TOPICS_REFETCH_INTERVAL ?? 10000;
 
+    /**
+     * 3. Основной запрос топиков.
+     * React Query мгновенно среагирует, как только изменится topicsInterval.
+     */
     const query = useQuery<Topic[]>({
         queryKey: ['topics'],
         queryFn: fetchTopics,
@@ -40,19 +44,18 @@ export const useTopics = (enabled: boolean = false) => {
         refetchOnWindowFocus: true
     });
 
-    const { refetch } = query;
-
-    useEffect(() => {
-        if (enabled) {
-            refetch(); 
-        }
-    }, [topicsInterval, enabled, refetch]);
-
+    // Логирование
     useEffect(() => {
         if (query.data) {
             console.log("Данные списка топиков обновлены:", query.data);
         }
     }, [query.data]);
+
+    useEffect(() => {
+        if (configQuery.error) {
+            console.error("Ошибка при получении Config в useTopics: ", configQuery.error);
+        }
+    }, [configQuery.error]);
 
     return { 
         topics: query.data ?? [], 
