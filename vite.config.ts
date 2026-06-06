@@ -12,16 +12,16 @@ export default defineConfig({
     },
   },
   build: {
-    cssCodeSplit: true, // Обязательно для разделения стилей
+    cssCodeSplit: true,
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),      
+        login: resolve(__dirname, 'login.html'),      
         mainpage: resolve(__dirname, 'mainpage.html'), 
       },
       output: {
         // Настройка JS
         entryFileNames: (chunkInfo) => {
-          return chunkInfo.name === 'index' 
+          return chunkInfo.name === 'login' 
             ? 'login/login.[hash].js' 
             : 'mainpage/mainpage.[hash].js';
         },
@@ -32,7 +32,7 @@ export default defineConfig({
           const isCSS = assetInfo.name?.endsWith('.css');
           
           if (isCSS) {
-            // Если CSS импортирован в index.html (Login)
+            // Если CSS импортирован в login.html (проверка на 'login' остается актуальной)
             if (assetInfo.name?.includes('index') || assetInfo.name?.includes('login')) {
               return 'login/login.[hash][extname]';
             }
@@ -50,6 +50,7 @@ export default defineConfig({
     },
   },
   server: {
+    open: '/login.html', 
     proxy: {
       '/api': {
         target: config.API_HOST + ":" + config.API_PORT,

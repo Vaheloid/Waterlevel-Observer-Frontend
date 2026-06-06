@@ -51,7 +51,7 @@ export const Sidebar = ({ isOpen, onToggle, activePanel, onPanelToggle, polygonM
             localStorage.clear();
             sessionStorage.clear();
 
-            window.location.replace("/");
+            window.location.replace("/login.html");
         }
     };
 

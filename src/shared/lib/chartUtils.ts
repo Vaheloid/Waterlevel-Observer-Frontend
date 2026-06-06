@@ -12,29 +12,7 @@ export function chartUtils(
 
     const timeline = new Map<number, { v?: number; e?: number; p?: number }>();
 
-    // // Если данных из API (EMA/Prediction) нет, используем старую логику расчета
-    // if (emaData.length === 0 && predictionData.length === 0) {
-    //     const localEmaCalculated = calculateEMA(rawData, 7, 2, 2);
-        
-    //     return localEmaCalculated.map((emaItem, index) => {
-    //         const date = new Date(emaItem.time_data);
-    //         const formatted = date.toLocaleString('ru-RU', {
-    //             day: '2-digit', month: '2-digit', year: 'numeric',
-    //             hour: '2-digit', minute: '2-digit', second: '2-digit',
-    //             timeZone: 'UTC',
-    //         });
-
-    //         return {
-    //             time: formatted, // Теперь здесь строка времени
-    //             displayTime: formatted,
-    //             value: rawData[index] ? parseFloat(rawData[index].value_data) : null,
-    //             ema: emaItem.value_data,
-    //             prediction: null,
-    //         };
-    //     });
-    // }
-
-    // Обработка данных из API (как на ваших скриншотах)
+    // Обработка данных из API
     rawData.forEach(item => {
         const ts = new Date(item.time_data).getTime();
         timeline.set(ts, { ...timeline.get(ts), v: parseFloat(item.value_data) });
@@ -51,6 +29,27 @@ export function chartUtils(
     });
 
     const sortedTimestamps = Array.from(timeline.keys()).sort((a, b) => a - b);
+
+    // ================= НАЧАЛО ЛОГИКИ СОЕДИНЕНИЯ ЛИНИЙ =================
+    // 1. Ищем самый последний таймстамп, в котором есть значение EMA
+    let lastEmaTs: number | null = null;
+    for (let i = sortedTimestamps.length - 1; i >= 0; i--) {
+        const ts = sortedTimestamps[i];
+        if (timeline.get(ts)?.e !== undefined && timeline.get(ts)?.e !== null) {
+            lastEmaTs = ts;
+            break;
+        }
+    }
+
+    // 2. Если нашли, то дублируем значение EMA в поле prediction для этой же точки.
+    // Теперь линия прогноза начнется ровно из "хвоста" скользящей средней.
+    if (lastEmaTs !== null) {
+        const node = timeline.get(lastEmaTs)!;
+        if (node.p === undefined || node.p === null) {
+            node.p = node.e; 
+        }
+    }
+    // ================= КОНЕЦ ЛОГИКИ СОЕДИНЕНИЯ ЛИНИЙ =================
 
     return sortedTimestamps.map(ts => {
         const date = new Date(ts);

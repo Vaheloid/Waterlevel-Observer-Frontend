@@ -186,7 +186,7 @@ export const TopicChartPanel = ({ topic, chartData, isListOpen, isSidebarOpen }:
                                         angle={-30} 
                                         textAnchor="end" 
                                         height={50} 
-                                        interval={0}
+                                        interval={0} //{0} "preserveStartEnd"
                                     />
                                     <YAxis 
                                         domain={[roundedMin, roundedMax]} 
@@ -195,7 +195,41 @@ export const TopicChartPanel = ({ topic, chartData, isListOpen, isSidebarOpen }:
                                         tickLine={false}
                                         tick={{ fontSize: 10 }}
                                     />
-                                    <Tooltip animationDuration={100} content={<Chart.Tooltip />} cursor={true} />
+                                    <Tooltip 
+                                        animationDuration={100} 
+                                        cursor={true} 
+                                        content={(props) => {
+                                            // Забираем только безопасные свойства, которые совместимы с Chart.Tooltip.
+                                            // Игнорируем внешний formatter, из-за которого ругается TypeScript.
+                                            const { payload, label, active } = props;
+                                            
+                                            if (payload && payload.length > 0) {
+                                                // Проверяем, рассчитывается ли в этой точке Средняя скользящая (EMA)
+                                                const hasEma = payload.some(item => item.dataKey === "ema");
+                                                
+                                                // Если EMA есть, фильтруем payload и убираем из него Прогноз
+                                                const filteredPayload = hasEma 
+                                                    ? payload.filter(item => item.dataKey !== "prediction")
+                                                    : payload;
+                                                
+                                                return (
+                                                    <Chart.Tooltip 
+                                                        active={active}
+                                                        label={label}
+                                                        payload={filteredPayload} 
+                                                    />
+                                                );
+                                            }
+                                            
+                                            return (
+                                                <Chart.Tooltip 
+                                                    active={active}
+                                                    label={label}
+                                                    payload={payload} 
+                                                />
+                                            );
+                                        }} 
+                                    />
                                     <Legend verticalAlign="top" content={<Chart.Legend interaction="hover" />} />
                                     
                                     {chart.series.map((item) => (

@@ -5,9 +5,11 @@ import type { MapProps } from "@/shared/types/types";
 import { RecenterMap } from "@/shared";
 import { lazy } from "react";
 import L from 'leaflet';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+//import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+//import markerIcon from 'leaflet/dist/images/marker-icon.png';
+//import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+import myCustomIconUrl from '@/shared/assets/icons/waterlevel_logo22_black.png';
 
 const MapContainer = lazy(() =>
   import("react-leaflet").then((module) => ({ default: module.MapContainer }))
@@ -18,13 +20,12 @@ const TileLayer = lazy(() =>
 
 // Создаем экземпляр дефолтной иконки вручную
 const DefaultIcon = L.icon({
-    iconUrl: markerIcon,
-    iconRetinaUrl: markerIcon2x,
-    shadowUrl: markerShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+    iconUrl: myCustomIconUrl,
+    //shadowUrl: markerShadow,
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
+    popupAnchor: [0, -38],
+    //shadowSize: [41, 41]
 });
 
 // Устанавливаем ее как стандартную для всех маркеров
