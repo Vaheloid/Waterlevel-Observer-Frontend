@@ -45,11 +45,22 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 export function Map({ selectedTopicId, topics, onMapClick, isAdding, mergedGeoJSON }: MapProps) {
     const currentTopicInfo = topics.find(t => t.id_topic === selectedTopicId);
 
+    // Формат: [[ЮжнаяШирота, ЗападнаяДолгота], [СевернаяШирота, ВосточнаяДолгота]]
+    const mapBounds: [[number, number], [number, number]] = [
+        [41.18, 19.63],   // Юго-запад: Юг Дагестана / Балтийская коса в Калининграде
+        [81.85, 190.0]    // Северо-восток: Мыс Флигели / Чукотка с запасом за 180° меридианом
+    ];
+
     return (
         <MapContainer 
             style={{ height: "100vh", width: "100%" }} 
-            center={[54.735141, 55.958726]} 
+            center={[54.735141, 55.958726]}
             zoom={12}
+            minZoom={5} 
+
+            maxBounds={mapBounds}
+            maxBoundsViscosity={0.5}
+
             zoomControl={false} 
             attributionControl={false}
             preferCanvas={true}
@@ -89,7 +100,6 @@ export function Map({ selectedTopicId, topics, onMapClick, isAdding, mergedGeoJS
                         {topic.name_topic}
                     </Tooltip>
                 </Marker>
-                
             ))}
         </MapContainer>
     );
