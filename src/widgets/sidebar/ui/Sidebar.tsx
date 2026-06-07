@@ -48,7 +48,6 @@ export const Sidebar = ({ isOpen, onToggle, activePanel, onPanelToggle, polygonM
 
             clearAllCookies();
 
-            localStorage.clear();
             sessionStorage.clear();
 
             window.location.replace("/login.html");
