@@ -164,3 +164,12 @@ export interface ProcessedDataPoint {
 }
 
 export type Point = [number, number];
+
+export interface MapConfigResponse {
+    MAP_BOUNDS: [[number, number], [number, number]];
+    MAP_CENTER: [number, number];
+    MAP_MIN_ZOOM: number;
+    MAP_DEFAULT_ZOOM: number;
+    MAP_BOUNDS_VISCOSITY: number;
+    CONFIG_CHECK_INTERVAL: number;
+}
