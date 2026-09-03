@@ -22,8 +22,10 @@ export const fetchTopics = async (): Promise<Topic[]> => {
     return response.data;
 };
 
-export const fetchTopicData = async (id: number): Promise<TopicDataResponse> => {
-    const response = await api.get<TopicDataResponse>(`/data/topics/${id}/data`);
+export const fetchTopicData = async (id: number, limit: number = 25): Promise<TopicDataResponse> => {
+    const response = await api.get<TopicDataResponse>(`/data/topics/${id}/data`, {
+        params: { limit }
+    });
     return response.data;
 };
 

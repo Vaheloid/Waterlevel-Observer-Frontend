@@ -57,7 +57,7 @@ export interface TopicChartPanelProps {
 
 /**
  * Тип ответа для данных графика
- * Эндпоинт: /api-mqtt/data/topics/{id}/data
+ * Эндпоинт: /api-mqtt/data/topics/{id}/data?limit={limit}
  */
 export type TopicDataResponse = TopicDataItem[];
 
