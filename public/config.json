@@ -1,5 +1,5 @@
 {
-  "API_HOST": "https://waterlevel-naillin.duckdns.org",
+  "API_HOST": "https://app.waterlevel-naillin.duckdns.org",
   "API_PORT": 443,
   "TOPICS_REFETCH_INTERVAL": 60000,
   "TOPIC_FULLDATA_REFETCH_INTERVAL": 60000,
